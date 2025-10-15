@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.deeptrack;
 // Classe para o armazenamento do robô
 public class Armazenamento {
     public enum EstadoSlot {
-        VAZIO, ROXO, VERDE
+        VAZIO, ROXO, VERDE, CHEIO
     }
     public EstadoSlot[] slots;
 
