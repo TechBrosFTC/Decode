@@ -9,10 +9,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
-<<<<<<< HEAD
 import com.qualcomm.robotcore.hardware.DcMotor;
-=======
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -33,11 +30,7 @@ public class Ateleop1 extends LinearOpMode {
     private DcMotorEx atirador1, atirador2;//instancia dos motores do outtake
     private Servo cremalheira, helice;//
     private Limelight3A limelight; //instancia da camera
-<<<<<<< HEAD
     private ColorSensor  sensorPos4;
-=======
-    private ColorSensor sensorPos2, sensorPos4;
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     private Armazenamento armazenamento = new Armazenamento();//
     double powersugador = 0.8, poweresteira = 0.8;
     double power = 1, curvapower = 0.4, multiplicadorx = 1, multiplicador = 0.6, multiplicadorcurva = 1;//variáveis de movimentação
@@ -57,13 +50,9 @@ public class Ateleop1 extends LinearOpMode {
     // debounce
     boolean prevA = false;
     boolean prevX = false;
-<<<<<<< HEAD
-    boolean manual = false, sugando = false, human_player = false, estava_no_humano = false;
+    boolean manual = false, sugando = false, human_player = false, estava_no_humano = false, sugando_auto = false;
     int subindo = 0;
-    int sugando_auto = 0;
     int contagem_human = 0;
-=======
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     int red, green, blue, alpha;
 
     ///////////////////////////////////////////////////////////////////////
@@ -85,10 +74,6 @@ public class Ateleop1 extends LinearOpMode {
         cremalheira = hardwareMap.get(Servo.class, "cremalheira");
         helice = hardwareMap.get(Servo.class, "seletor");
 
-<<<<<<< HEAD
-=======
-        sensorPos2 = hardwareMap.get(ColorSensor.class, "sensoresquerda");
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
         sensorPos4 = hardwareMap.get(ColorSensor.class, "sensordireita");
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -112,7 +97,6 @@ public class Ateleop1 extends LinearOpMode {
 
         Thread garra = new Thread(() -> {
             while (opModeIsActive() && !Thread.currentThread().isInterrupted()) {
-<<<<<<< HEAD
                 if(gamepad2.dpad_up){
                     human_player = true;
                 }
@@ -143,12 +127,12 @@ public class Ateleop1 extends LinearOpMode {
                         intake.stop();
                     }
                     if(gamepad2.a){
-                            sugando_auto = 0;
+                        if(sugando_auto) {
                             intake.sugar();
                             sugar = true;
                             while (sensorPos4.green() < 200) {
-                                if(sugando_auto == 2){
-                                    break;
+                                if(sugando_auto){
+
                                 }
                             }
                             intake.sugar(1, 1);
@@ -183,7 +167,7 @@ public class Ateleop1 extends LinearOpMode {
                                 seletor.posicaoColeta(slotvazio);
                             }
                             sugar = false;
-                            sugando_auto = 0;
+                        }
                     }
                 }else{
                     if (gamepad2.dpad_left) {
@@ -198,72 +182,6 @@ public class Ateleop1 extends LinearOpMode {
 
 
 
-=======
-                if (gamepad2.dpad_left) {
-                    intake.sugar();
-                    sleep(350);
-                    seletor.verde();
-                    intake.stop();
-                }
-                if (gamepad2.dpad_right) {
-                    intake.sugar();
-                    sleep(350);
-                    seletor.roxo();
-                    intake.stop();
-                }
-                if(gamepad2.a){
-                    intake.sugar();
-                    sugar = true;
-                    while(sensorPos4.green() < 100){}
-                    int slotcheio = seletor.getSlotNaPosicaoColeta();
-                    telemetry.addData("slot cheio" ,slotcheio);
-                    armazenamento.setSlot(slotcheio, Armazenamento.EstadoSlot.CHEIO);
-                    boolean vazio = false;
-                    int slotvazio = 3;
-                    for (int i = 0; i < 3; i++) {
-                        if (armazenamento.getSlot(i) == Armazenamento.EstadoSlot.VAZIO) {
-                            vazio = true;
-                            slotvazio = i;
-                            break;
-                        }
-                    }
-                    green = 0;
-                    blue = 0;
-                    red = 0;
-                    alpha = 0;
-                    sleep(200);
-                    for(int i = 0; i < 200; i++){
-                        green += sensorPos4.green();
-                        red += sensorPos4.red();
-                        blue += sensorPos4.blue();
-                        alpha += sensorPos4.alpha();
-                    }
-                    green /= 199;
-                    red /= 199;
-                    blue /= 199;
-                    alpha /= 199;
-                    if(blue > 500 && green < 300){
-                        armazenamento.setSlot(slotcheio, Armazenamento.EstadoSlot.ROXO);
-                    }else{
-                        armazenamento.setSlot(slotcheio, Armazenamento.EstadoSlot.VERDE);
-                    }
-                    sleep(400);
-                    if (vazio) {
-                        seletor.posicaoColeta(slotvazio);
-                    }
-                    sugar = false;
-                    intake.stop();
-                }
-                if(gamepad2.right_bumper && sugar){
-                    seletor.rotacionarRelativo(1);
-                }
-                if(gamepad2.left_bumper && sugar){
-                    seletor.rotacionarRelativo(-1);
-                }
-                if(gamepad2.x){
-
-                }
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
             }
         });
 
@@ -289,13 +207,10 @@ public class Ateleop1 extends LinearOpMode {
             telemetry.addData("armazenamento 0", armazenamento.getSlot(0));
             telemetry.addData("armazenamento 1", armazenamento.getSlot(1));
             telemetry.addData("armazenamento 2", armazenamento.getSlot(2));
-<<<<<<< HEAD
             telemetry.addData("blue", blue);
             telemetry.addData("red", red);
             telemetry.addData("green", green);
             telemetry.addData("alpha", alpha);
-=======
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
             telemetry.addData("par", sugador.getCurrentPosition());
             telemetry.addData("perp", esteira.getCurrentPosition());
             telemetry.update();
@@ -355,11 +270,7 @@ public class Ateleop1 extends LinearOpMode {
                 if (!andando) {
                     imu.resetYaw();
                 }
-<<<<<<< HEAD
                 erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
-=======
-                erro = alvo - imu.getRobotYawPitchRollAngles().getYaw() ;
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
                 proporcional = erro * 1;
                 derivativa = (erro - ultimoerro) * 1;
                 integral = erro + ki;
@@ -379,12 +290,8 @@ public class Ateleop1 extends LinearOpMode {
                 andando = true;
             }//esquerda
             if (f == 0 && t == 0 && d == 0 && e == 0) {
-<<<<<<< HEAD
                 parar();
                 mecanumesquerdabase(Math.abs(gamepad1.left_stick_x) * multiplicador, direcao);
-=======
-                parar();                mecanumesquerdabase(Math.abs(gamepad1.left_stick_x)*multiplicador, direcao);
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
 
                 andando = false;
             }//parar
@@ -411,28 +318,19 @@ public class Ateleop1 extends LinearOpMode {
             }
 
 
-<<<<<<< HEAD
             if (gamepad1.cross) {
-=======
-            if(gamepad1.cross){
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
                 multiplicadorx = 0.5;
                 multiplicador = 0.5;
                 multiplicadorcurva = 0.5;
                 modolento = true;
                 sleep(100);
-<<<<<<< HEAD
             } else {//modolento config
-=======
-            }else{//modolento config
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
                 multiplicadorx = 1;
                 multiplicador = 0.8;
                 multiplicadorcurva = 1;
                 modolento = false;
                 sleep(100);
             }
-<<<<<<< HEAD
             if(!manual){
                 if (gamepad2.right_bumper && sugar) {
                     seletor.rotacionarRelativo(1);
@@ -557,128 +455,9 @@ public class Ateleop1 extends LinearOpMode {
                 gamepad1.rumble(300);
                 gamepad2.rumble(300);
                 manual = !manual;
-            }if(gamepad2.a && sugando_auto == 0){
-                sugando_auto = 1;
-                intake.sugar(-1, -1);
-                sleep(200);
-            }else if(gamepad2.a && sugando_auto == 1){
-                intake.stop();
-                sugando_auto = 2;
             }
 
 
-=======
-            if (gamepad2.b) {
-                if ((seletor.posicaoAtual % 2) != 0) {
-                    LLResult result = limelight.getLatestResult();
-
-                    if (result.isValid()) {
-                        double x = 0;
-                        double y = 0;
-                        int id;
-                        double txRobo = 0;
-
-                        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-                        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                            id = fiducial.getFiducialId();            // ID do fiducial
-                            x = fiducial.getTargetXDegrees();         // posição horizontal
-                            y = fiducial.getTargetYDegrees();         // posição vertical
-
-                            // telemetry.addData("x", x);
-                            // telemetry.addData("y", y);
-                            // telemetry.update();
-
-                            double txCam = x;                         // ângulo da câmera
-                            double distance = getDistanceToTarget(y); // calcula distância ao alvo
-                            double xOffset = -0.1065;                 // deslocamento da câmera em relação ao centro
-
-                            txRobo = Math.toDegrees(
-                                    Math.atan(Math.tan(Math.toRadians(txCam)) + (xOffset / distance))
-                            );
-                        }
-
-                        if (y > 8) {
-                            // Mira com ajuste para alvo alto
-                            peach.mecanumDrive.curve(-txRobo, 0.25, 0.25);
-                            telemetry.addData("txrobo", txRobo);
-
-                            Thread acel = new Thread(() -> {
-                                while (opModeIsActive()) {
-                                    shooter.acelerarAtirador(1850);
-                                }
-                            });
-                            acel.start();
-
-                            while (shooter.getVel() < 1800) { }
-                            cremalheira.setPosition(1);
-
-                            while (atirador2.getVelocity() > 1600) { }
-                            cremalheira.setPosition(0);
-
-                            sleep(700);
-                            acel.interrupt();
-                            cremalheira.setPosition(0.5);
-                        } else {
-                            // Mira com ajuste para alvo baixo
-                            peach.mecanumDrive.curve(-txRobo, 0.25, 0.25);
-
-                            Thread acel = new Thread(() -> {
-                                while (opModeIsActive()) {
-                                    shooter.acelerarAtirador(2250);
-                                }
-                            });
-                            acel.start();
-
-                            while (shooter.getVel() < 2250) { }
-                            cremalheira.setPosition(1);
-
-                            while (atirador2.getVelocity() > 1800) { }
-                            acel.interrupt();
-                            cremalheira.setPosition(0);
-
-                            sleep(700);
-                            cremalheira.setPosition(0.5);
-                        }
-
-                        // Atualiza slots do armazenamento
-                        if (seletor.posicaoAtual == 1) {
-                            armazenamento.setSlot(1, Armazenamento.EstadoSlot.VAZIO);
-                        } else if (seletor.posicaoAtual == 3) {
-                            armazenamento.setSlot(0, Armazenamento.EstadoSlot.VAZIO);
-                        } else if (seletor.posicaoAtual == 5) {
-                            armazenamento.setSlot(2, Armazenamento.EstadoSlot.VAZIO);
-                        }
-                    }
-                }
-            } // Fim do if gamepad2.b
-
-
-
-            if(gamepad2.right_trigger > 0){
-                acelerando = true;
-            }else if(gamepad2.left_trigger > 0){
-                acelerando = false;
-            }
-            if(acelerando){
-                shooter.acelerarAtirador(shootervelocity);
-            }else{
-                shooter.atirador1.setPower(0);
-                shooter.atirador2.setPower(0);
-            }
-            if(gamepad2.dpad_left){
-                shootervelocity += 10;
-            }else if(gamepad2.dpad_right){
-                shootervelocity -= 10;
-            }
-            if(gamepad2.right_trigger > 0) {
-                cremalheira.setPosition(1);
-            }else if (gamepad2.left_trigger > 0) {
-                cremalheira.setPosition(0);
-            }else{
-                cremalheira.setPosition(0.5);
-            }
-
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
         }
     }
     /////////////////////////////////////////////////////funções///////////////////////////////////////////////////////////////////////
@@ -785,11 +564,4 @@ public class Ateleop1 extends LinearOpMode {
         return (diferenca >= 0) ? 1 : -1; // +1 = horário, -1 = anti-horário
     }
 
-<<<<<<< HEAD
-=======
-    private ColorSensor sensorParaSentido(int sentido) {
-        return (sentido > 0) ? sensorPos2 : sensorPos4; // sensor da direita para horário, esquerda para anti-horário
-    }
-
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
 }
