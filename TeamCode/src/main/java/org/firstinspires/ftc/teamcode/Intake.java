@@ -13,10 +13,13 @@ public class Intake {
         sugador.setPower(powersugador);
         esteira.setPower(poweresteira);
     }
+<<<<<<< HEAD
     public void sugar(double power_sugador , double power_esteira){
         sugador.setPower(powersugador);
         esteira.setPower(poweresteira);
     }
+=======
+>>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     public void stop(){
         sugador.setPower(0);
         esteira.setPower(0);
