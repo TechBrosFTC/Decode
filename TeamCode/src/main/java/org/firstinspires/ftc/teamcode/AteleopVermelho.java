@@ -1,37 +1,36 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.webkit.WebHistoryItem;
-
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.rev.RevColorSensorV3;
+import com.qualcomm.hardware.rev.RevTouchSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.deeptrack.Armazenamento;
 import org.firstinspires.ftc.teamcode.deeptrack.Seletor;
 
 import java.util.List;
 
 @TeleOp (name = "Ateleop1")
-public class Ateleop1 extends LinearOpMode {
+public class AteleopVermelho extends LinearOpMode {
     private IMU imu;
     private DcMotorEx direitaFrente, direitaTras, esquerdaFrente, esquerdaTras;//instancia dos motores de movimento
     private DcMotorEx sugador, esteira, encoderseletor;//instância dos motores do intake
     private DcMotorEx atirador1, atirador2;//instancia dos motores do outtake
     private Servo cremalheira, helice;//
-    private Limelight3A limelight; //instancia da camera
+    private DigitalChannel fimdecurso;    //private Limelight3A limelight; //instancia da camera
     private ColorSensor  sensorPos4;
     private Armazenamento armazenamento = new Armazenamento();//
+    private Limelight3A limelight;
     double powersugador = 0.8, poweresteira = 0.8;
     double power = 1, curvapower = 0.4, multiplicadorx = 1, multiplicador = 0.6, multiplicadorcurva = 1;//variáveis de movimentação
     double proporcional, derivativa, integral, erro, direcao = 0, ultimoerro = 0, alvo = 0; //Variáveis de cáluclo do PID
@@ -47,6 +46,10 @@ public class Ateleop1 extends LinearOpMode {
     double shootervelocity = 0;
     int slotEmColeta = -1;
 
+    double previousError = 0, target_velocity = 0;
+    int tirostep = 0;
+    boolean atirando = false;
+    double txRobo = 0;
     // debounce
     boolean prevA = false;
     boolean prevX = false;
@@ -60,31 +63,39 @@ public class Ateleop1 extends LinearOpMode {
         imu = hardwareMap.get(IMU.class, "imu");
 
         direitaFrente = hardwareMap.get(DcMotorEx.class, "rightFront");
-        direitaTras = hardwareMap.get(DcMotorEx.class, "rightBack");
-        esquerdaFrente = hardwareMap.get(DcMotorEx.class, "encoderseletor");
+        direitaTras = hardwareMap.get(DcMotorEx.class, "encoderseletor");
+        esquerdaFrente = hardwareMap.get(DcMotorEx.class, "leftFront");
         esquerdaTras = hardwareMap.get(DcMotorEx.class, "leftBack");
+        direitaTras.setDirection(DcMotorSimple.Direction.REVERSE);
+        esquerdaFrente.setDirection(DcMotorSimple.Direction.REVERSE);
 
         sugador = hardwareMap.get(DcMotorEx.class, "par");
         esteira = hardwareMap.get(DcMotorEx.class, "perp");
         encoderseletor = hardwareMap.get(DcMotorEx.class, "encoderseletor");
+        fimdecurso = hardwareMap.get(DigitalChannel.class, "fimdecurso");
+        esteira.setDirection(DcMotorSimple.Direction.REVERSE);
+        sugador.setDirection(DcMotorSimple.Direction.REVERSE);
 
         atirador1 = hardwareMap.get(DcMotorEx.class, "atirador1");
         atirador2 = hardwareMap.get(DcMotorEx.class, "atirador2");
 
+        atirador1.setDirection(DcMotorSimple.Direction.REVERSE);
+        atirador2.setDirection(DcMotorSimple.Direction.REVERSE);
+
         cremalheira = hardwareMap.get(Servo.class, "cremalheira");
         helice = hardwareMap.get(Servo.class, "seletor");
 
-        sensorPos4 = hardwareMap.get(ColorSensor.class, "sensordireita");
+        sensorPos4 = hardwareMap.get(ColorSensor.class, "sensorcor");
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         shooter = new Shooter(atirador1, atirador2);
+        //boolean atirando = false;
 
-        peach = new RobotSetup(hardwareMap, esquerdaFrente, esquerdaTras, direitaFrente, direitaTras, sugador, esteira);
-        RevHubOrientationOnRobot revOrientaion = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.RIGHT, RevHubOrientationOnRobot.UsbFacingDirection.UP);
+        //peach = new RobotSetup(hardwareMap, esquerdaFrente, esquerdaTras, direitaFrente, direitaTras, sugador, esteira);
+        RevHubOrientationOnRobot revOrientaion = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.UP);
         imu.initialize(new IMU.Parameters(revOrientaion));
 
-        direitaFrente.setDirection(DcMotorSimple.Direction.REVERSE);
         direitaTras.setDirection(DcMotorSimple.Direction.REVERSE);
         esquerdaFrente.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -96,7 +107,7 @@ public class Ateleop1 extends LinearOpMode {
         Intake intake = new Intake(sugador, esteira);
 
         Thread garra = new Thread(() -> {
-            while (opModeIsActive() && !Thread.currentThread().isInterrupted()) {
+            /*while (opModeIsActive() && !Thread.currentThread().isInterrupted()) {
                 if(gamepad2.dpad_up){
                     human_player = true;
                 }
@@ -182,8 +193,23 @@ public class Ateleop1 extends LinearOpMode {
 
 
 
+            }*/
+            if(gamepad2.right_bumper){
+                helice.setPosition(1);
+                sugador.setPower(powersugador);
+                esteira.setPower(poweresteira);
+                sleep(50);
+            } else if (gamepad2.left_bumper) {
+                helice.setPosition(0);
+                sugador.setPower(powersugador);
+                esteira.setPower(poweresteira);
+                sleep(50);
+            }else{
+                helice.setPosition(0.5);
             }
         });
+
+        fimdecurso.setMode(DigitalChannel.Mode.INPUT);
 
         waitForStart();
 
@@ -198,21 +224,23 @@ public class Ateleop1 extends LinearOpMode {
         armazenamento.setSlot(0, Armazenamento.EstadoSlot.VAZIO);
         armazenamento.setSlot(1, Armazenamento.EstadoSlot.VAZIO);
         armazenamento.setSlot(2, Armazenamento.EstadoSlot.VAZIO);
-
         garra.start();
 
         while (opModeIsActive() && !Thread.currentThread().isInterrupted()) {
             telemetry.addData("imu", imu.getRobotYawPitchRollAngles().getYaw());
             telemetry.addData("encoder", encoderseletor.getCurrentPosition());
-            telemetry.addData("armazenamento 0", armazenamento.getSlot(0));
-            telemetry.addData("armazenamento 1", armazenamento.getSlot(1));
-            telemetry.addData("armazenamento 2", armazenamento.getSlot(2));
             telemetry.addData("blue", blue);
             telemetry.addData("red", red);
             telemetry.addData("green", green);
             telemetry.addData("alpha", alpha);
+            telemetry.addData("toque", fimdecurso.getState());
             telemetry.addData("par", sugador.getCurrentPosition());
             telemetry.addData("perp", esteira.getCurrentPosition());
+            telemetry.addData("speed1", atirador1.getVelocity());
+            telemetry.addData("speed2", atirador2.getVelocity());
+            telemetry.addData("med_speed", (Math.abs(atirador1.getVelocity())+Math.abs(atirador2.getVelocity()))/2);
+            telemetry.addData("target", target_velocity);
+            telemetry.addData("tirostep", tirostep);
             telemetry.update();
             if (gamepad1.left_stick_y != 0) {
                 if (gamepad1.left_stick_y > 0) {
@@ -238,144 +266,121 @@ public class Ateleop1 extends LinearOpMode {
                 d = 0;
                 e = 0;
             }
-
-            if (f > t && f > d && f > e) { //andar para frente
-                if (!andando) {
-                    imu.resetYaw();
-                }
-                erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
-                proporcional = erro * kp;
-                derivativa = (erro - ultimoerro) * kd;
-                integral = erro + ki;
-                direcao = (proporcional + derivativa + integral) / 100;
-                movDirecionado(Math.abs(gamepad1.left_stick_y) * multiplicador, direcao);
-                ultimoerro = erro;
-                andando = true;
-            }//frente
-            if (t > f && t > d && t > e) { //andar para trás
-                if (!andando) {
-                    imu.resetYaw();
-                }
-                erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
-                proporcional = erro * kp;
-                derivativa = (erro - ultimoerro) * kd;
-                integral = erro + ki;
-                direcao = (proporcional + derivativa + integral) / 100;
-                lastpower = gamepad1.left_stick_y * multiplicador;
-                movDirecionado(Math.abs(gamepad1.left_stick_y) * multiplicador * -1, direcao);
-                ultimoerro = erro;
-                andando = false;
-            }//tras
-            if (d > f && d > t && d > e) { //andar para Direita
-                if (!andando) {
-                    imu.resetYaw();
-                }
-                erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
-                proporcional = erro * 1;
-                derivativa = (erro - ultimoerro) * 1;
-                integral = erro + ki;
-                direcao = (proporcional + derivativa + integral) / 100;
-                mecanumdireitabase(Math.abs(gamepad1.left_stick_x) * multiplicador, -direcao);
-                andando = true;
-            }//direita
-            if (e > f && e > t && e > d) { //andar para Esquerda
-                if (!andando) {
-                    imu.resetYaw();
-                }
-                erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
-                proporcional = erro * 1;
-                derivativa = (erro - ultimoerro) * 1;
-                integral = erro + ki;
-                direcao = (proporcional + derivativa + integral) / 100;
-                andando = true;
-            }//esquerda
-            if (f == 0 && t == 0 && d == 0 && e == 0) {
-                parar();
-                mecanumesquerdabase(Math.abs(gamepad1.left_stick_x) * multiplicador, direcao);
-
-                andando = false;
-            }//parar
-            if (gamepad1.right_stick_x > 0) {
-                direitaFrente.setPower(curvapower * multiplicadorcurva * -1);
-                direitaTras.setPower(curvapower * multiplicadorcurva * -1);
-                esquerdaFrente.setPower(curvapower * multiplicadorcurva);
-                esquerdaTras.setPower(curvapower * multiplicadorcurva);
-                curva = true;
-            } else if (gamepad1.right_stick_x < 0) {
-                direitaFrente.setPower(curvapower * multiplicadorcurva);
-                direitaTras.setPower(curvapower * multiplicadorcurva);
-                esquerdaFrente.setPower(curvapower * -1 * multiplicadorcurva);
-                esquerdaTras.setPower(curvapower * -1 * multiplicadorcurva);
-                curva = true;
-            } else {
-                if (curva) {
-                    parar();
-                    sleep(50);
-                    imu.resetYaw();
-                    curva = false;
+            if(!atirando) {
+                if (f > t && f > d && f > e) { //andar para frente
+                    if (!andando) {
+                        imu.resetYaw();
+                    }
+                    erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
+                    proporcional = erro * kp;
+                    derivativa = (erro - ultimoerro) * kd;
+                    integral = erro + ki;
+                    direcao = (proporcional + derivativa + integral) / 100;
+                    movDirecionado(Math.abs(gamepad1.left_stick_y) * multiplicador, -direcao);
+                    ultimoerro = erro;
+                    andando = true;
+                }//frente
+                if (t > f && t > d && t > e) { //andar para trás
+                    if (!andando) {
+                        imu.resetYaw();
+                    }
+                    erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
+                    proporcional = erro * kp;
+                    derivativa = (erro - ultimoerro) * kd;
+                    integral = erro;
+                    direcao = (proporcional + derivativa + integral) / 100;
+                    lastpower = gamepad1.left_stick_y * multiplicador;
+                    movDirecionado(Math.abs(gamepad1.left_stick_y) * multiplicador * -1, direcao * 1.6);
+                    ultimoerro = erro;
                     andando = false;
+                }//tras
+                if (d > f && d > t && d > e) { //andar para Direita
+                    if (!andando) {
+                        imu.resetYaw();
+                    }
+                    erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
+                    proporcional = erro * 1;
+                    derivativa = (erro - ultimoerro) * 1;
+                    integral = erro + ki;
+                    direcao = (proporcional + derivativa + integral) / 100;
+                    mecanumesquerdabase(Math.abs(gamepad1.left_stick_x) * multiplicador, -direcao);
+                    andando = true;
+                }//direita
+                if (e > f && e > t && e > d) { //andar para Esquerda
+                    if (!andando) {
+                        imu.resetYaw();
+                    }
+                    erro = alvo - imu.getRobotYawPitchRollAngles().getYaw();
+                    proporcional = erro * 1;
+                    derivativa = (erro - ultimoerro) * 1;
+                    integral = erro + ki;
+                    direcao = (proporcional + derivativa + integral) / 100;
+                    mecanumdireitabase(Math.abs(gamepad1.left_stick_x) * multiplicador, direcao);
+                    andando = true;
+                }//esquerda
+                if (f == 0 && t == 0 && d == 0 && e == 0) {
+                    parar();
+                    andando = false;
+                }//parar
+                if (gamepad1.right_stick_x < 0) {
+                    direitaFrente.setPower(curvapower * multiplicadorcurva * -1);
+                    direitaTras.setPower(curvapower * multiplicadorcurva * -1);
+                    esquerdaFrente.setPower(curvapower * multiplicadorcurva);
+                    esquerdaTras.setPower(curvapower * multiplicadorcurva);
+                    curva = true;
+                } else if (gamepad1.right_stick_x > 0) {
+                    direitaFrente.setPower(curvapower * multiplicadorcurva);
+                    direitaTras.setPower(curvapower * multiplicadorcurva);
+                    esquerdaFrente.setPower(curvapower * -1 * multiplicadorcurva);
+                    esquerdaTras.setPower(curvapower * -1 * multiplicadorcurva);
+                    curva = true;
+                } else {
+                    if (curva) {
+                        parar();
+                        sleep(50);
+                        imu.resetYaw();
+                        curva = false;
+                        andando = false;
+                    }
                 }
-            }
 
 
-            if (gamepad1.cross) {
-                multiplicadorx = 0.5;
-                multiplicador = 0.5;
-                multiplicadorcurva = 0.5;
-                modolento = true;
-                sleep(100);
-            } else {//modolento config
-                multiplicadorx = 1;
-                multiplicador = 0.8;
-                multiplicadorcurva = 1;
-                modolento = false;
-                sleep(100);
+                if (gamepad1.cross) {
+                    multiplicadorx = 0.5;
+                    multiplicador = 0.5;
+                    multiplicadorcurva = 0.5;
+                    modolento = true;
+                    sleep(100);
+                } else {//modolento config
+                    multiplicadorx = 1;
+                    multiplicador = 0.8;
+                    multiplicadorcurva = 1;
+                    modolento = false;
+                    sleep(100);
+                }
             }
-            if(!manual){
-                if (gamepad2.right_bumper && sugar) {
-                    seletor.rotacionarRelativo(1);
-                }
-                if (gamepad2.left_bumper && sugar) {
-                    seletor.rotacionarRelativo(-1);
-                }
-            }else{
-                if(gamepad2.x){
-                   if(subindo == 0){
-                       cremalheira.setPosition(0.5);
-                       subindo = 1;
-                   }else if(subindo == 1){
-                       cremalheira.setPosition(1);
-                       subindo =2;
-                   }else{
-                       cremalheira.setPosition(0);
-                       subindo = 0;
-                   }
-                }
-                if(gamepad1.a){
-                    sugando = !sugando;
+            if(gamepad2.b){
+                if(atirando){
+                    atirando = false;
+                    sleep(300);
+                }else{
+                    tirostep = 0;
+                    atirador1.setPower(0);
+                    atirador2.setPower(0);
+                    atirando = true;
                     sleep(300);
                 }
-                if(sugando){
-                    intake.sugar(1, 1);
-                }else{
-                    intake.stop();
-                }
-                if(gamepad1.right_bumper){
-                    helice.setPosition(1);
-                }else if( gamepad1.left_bumper){
-                    helice.setPosition(0);
-                }else {
-                    helice.setPosition(0.5);
-                }
-                if (gamepad2.b) {
-                    if ((seletor.posicaoAtual % 2) != 0) {
+            }
+            if(atirando){
+                switch (tirostep){
+                    case 0:
+                        parar();
                         LLResult result = limelight.getLatestResult();
-
-                        if (result.isValid()) {
+                        if(result.isValid()){
                             double x = 0;
                             double y = 0;
                             int id;
-                            double txRobo = 0;
+                            txRobo = 0;
 
                             List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
                             for (LLResultTypes.FiducialResult fiducial : fiducials) {
@@ -395,67 +400,142 @@ public class Ateleop1 extends LinearOpMode {
                                         Math.atan(Math.tan(Math.toRadians(txCam)) + (xOffset / distance))
                                 );
                             }
-
-                            if (y > 8) {
-                                // Mira com ajuste para alvo alto
-                                peach.mecanumDrive.curve(-txRobo, 0.25, 0.25);
-                                telemetry.addData("txrobo", txRobo);
-
-                                Thread acel = new Thread(() -> {
-                                    while (opModeIsActive()) {
-                                        shooter.acelerarAtirador(1850);
-                                    }
-                                });
-                                acel.start();
-
-                                while (shooter.getVel() < 1800) { }
-                                cremalheira.setPosition(1);
-
-                                while (atirador2.getVelocity() > 1600) { }
-                                cremalheira.setPosition(0);
-
-                                sleep(700);
-                                acel.interrupt();
-                                cremalheira.setPosition(0.5);
-                            } else {
-                                // Mira com ajuste para alvo baixo
-                                peach.mecanumDrive.curve(-txRobo, 0.25, 0.25);
-
-                                Thread acel = new Thread(() -> {
-                                    while (opModeIsActive()) {
-                                        shooter.acelerarAtirador(2250);
-                                    }
-                                });
-                                acel.start();
-
-                                while (shooter.getVel() < 2250) { }
-                                cremalheira.setPosition(1);
-
-                                while (atirador2.getVelocity() > 1800) { }
-                                acel.interrupt();
-                                cremalheira.setPosition(0);
-
-                                sleep(700);
-                                cremalheira.setPosition(0.5);
-                            }
-
-                            // Atualiza slots do armazenamento
-                            if (seletor.posicaoAtual == 1) {
-                                armazenamento.setSlot(1, Armazenamento.EstadoSlot.VAZIO);
-                            } else if (seletor.posicaoAtual == 3) {
-                                armazenamento.setSlot(0, Armazenamento.EstadoSlot.VAZIO);
-                            } else if (seletor.posicaoAtual == 5) {
-                                armazenamento.setSlot(2, Armazenamento.EstadoSlot.VAZIO);
+                            if(y > 8){
+                                target_velocity = 1800;
+                            }else{
+                                target_velocity = 2400;
                             }
                         }
-                    }
-                } // Fim do if gamepad2.b
+                        tirostep++;
+                        imu.resetYaw();
+                        break;
+                    case 1:
+                        double curve = 0.1;
+                        if(txRobo > 0){
+                            direitaFrente.setPower(curve);
+                            direitaTras.setPower(curve);
+                            esquerdaFrente.setPower(curve * -1);
+                            esquerdaTras.setPower(curve * -1);
+                        }else{
+                            direitaFrente.setPower(curve * -1);
+                            direitaTras.setPower(curve * -1);
+                            esquerdaFrente.setPower(curve);
+                            esquerdaTras.setPower(curve);
+                        }
+                        sleep(10);
+                        if(Math.abs(imu.getRobotYawPitchRollAngles().getYaw()) >= Math.abs(txRobo)-1){
+                            parar();
+                            tirostep ++;
+                        }
+                        break;
+                    case 2:
+                        double integral = 0;
+                        double kp = 0.2, kd = 0, ki = 0;
+                        double currentVelocity = (Math.abs(atirador1.getVelocity())+Math.abs(atirador2.getVelocity()))/2;
+                        double error = target_velocity - currentVelocity;
+                        double derivative = (error - previousError);
+
+                        double output = kp * error + ki * integral + kd * derivative;
+                        previousError = error;
+
+// Limita o output para [-1, 1]
+                        output = Math.max(0, Math.min(1, output));
+
+// Aplica aos dois motores
+                        atirador1.setPower(-output);
+                        atirador2.setPower(output);
+                        if(currentVelocity > target_velocity){
+                            tirostep ++;
+                            break;
+                        }
+                        break;
+                    case 3:
+                        integral = 0;
+                        kp = 2; kd = 0; ki = 0;
+                        currentVelocity = (Math.abs(atirador1.getVelocity())+Math.abs(atirador2.getVelocity()))/2;
+                        error = target_velocity - currentVelocity;
+                        derivative = (error - previousError);
+
+                        output = kp * error + ki * integral + kd * derivative;
+                        previousError = error;
+
+// Limita o output para [-1, 1]
+                        output = Math.max(0, Math.min(1, output));
+
+// Aplica aos dois motores
+                        atirador1.setPower(-output);
+                        atirador2.setPower(output);
+                        currentVelocity = (Math.abs(atirador1.getVelocity())+Math.abs(atirador2.getVelocity()))/2;
+                        cremalheira.setPosition(1);
+                        if(!fimdecurso.getState() || currentVelocity < target_velocity-600){
+                            tirostep ++;
+                        }
+                        break;
+                    case 4:
+                        atirador2.setPower(0);
+                        atirador1.setPower(0);
+                        tirostep ++;
+                        break;
+                    case 5:
+                        cremalheira.setPosition(0);
+                        sleep(700);
+                        cremalheira.setPosition(0.5);
+                        tirostep = 0;
+                        previousError = 0;
+                        atirando = false;
+                        break;
+                    default:
+                        break;
+                }
             }
-            if(gamepad2.y){
-                gamepad1.rumble(300);
-                gamepad2.rumble(300);
-                manual = !manual;
+
+
+
+
+
+            if(gamepad2.x && fimdecurso.getState()) {
+                cremalheira.setPosition(1);
+
+            }else if (gamepad2.y) {
+                cremalheira.setPosition(0);
+            }else{
+                cremalheira.setPosition(0.5);
             }
+            if(gamepad2.a){
+                sugador.setPower(powersugador);
+                esteira.setPower(poweresteira);
+            }else if(gamepad2.dpad_down){
+                sugador.setPower(-powersugador);
+                esteira.setPower(-poweresteira);
+            }else{
+                sugador.setPower(0);
+                esteira.setPower(0);
+            }
+            /*if(gamepad2.right_trigger > 0){
+                atirador1.setPower(1);
+                atirador2.setPower(-1);
+            }else if(gamepad2.left_trigger > 0){
+                atirador1.setPower(-1);
+                atirador2.setPower(1);
+            }else{
+                atirador1.setPower(0);
+                atirador2.setPower(0);
+            }*/
+            if(gamepad2.right_bumper){
+                helice.setPosition(1);
+                sugador.setPower(powersugador);
+                esteira.setPower(poweresteira);
+                sleep(50);
+            } else if (gamepad2.left_bumper) {
+                helice.setPosition(0);
+                sugador.setPower(powersugador);
+                esteira.setPower(poweresteira);
+                sleep(50);
+            }else{
+                helice.setPosition(0.5);
+            }
+
+
 
 
         }

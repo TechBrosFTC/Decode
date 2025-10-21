@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.deeptrack.Seletor;
 
 import java.util.List;
 
-@Autonomous (name="autoazul,0")
+@Autonomous (name="autoazul")
 public class AutoAzul extends LinearOpMode{
     DcMotorEx atirador1;
     DcMotorEx atirador2;
@@ -115,17 +115,17 @@ public class AutoAzul extends LinearOpMode{
         RobotSetup peach = new RobotSetup(hardwareMap, esquerdaFrente, esquerdaTras, direitaFrente, direitaTras, sugador, esteira);
         shooter = new Shooter(atirador1, atirador2);
         intake = new Intake(sugador, esteira);
-        Pose2d initialPose = new Pose2d(54.7, 51.1, Math.toRadians(135));
+        Pose2d initialPose = new Pose2d(54.7, -51.1, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeToSplineHeading(new Vector2d(12, 5), Math.toRadians(155))
+                .strafeToSplineHeading(new Vector2d(-12, 0), Math.toRadians(155))
                 .waitSeconds(0.5);
 
-        TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(new Vector2d(12, 5), Math.toRadians(155)))
+        TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(new Vector2d(-12, 0), Math.toRadians(155)))
                 .turn(Math.toRadians(53))
                 .waitSeconds(0.5);
-        TrajectoryActionBuilder tab3 = drive.actionBuilder(new Pose2d(new Vector2d(12, 5), Math.toDegrees(125)))
+        TrajectoryActionBuilder tab3 = drive.actionBuilder(new Pose2d(new Vector2d(-12, 0), Math.toDegrees(125)))
                 .strafeToSplineHeading(new Vector2d(-68, -68), Math.toRadians(205));
 
         while (!isStopRequested() && !opModeIsActive()) {
@@ -210,7 +210,7 @@ public class AutoAzul extends LinearOpMode{
                 sleep(200);
                 intake.sugar(1, -1);
                 sleep(500);
-                girarseletor(-52);
+                girarseletor(-50);
                 sleep(500);
                 girarseletor(-50);
                 sleep(200);
@@ -220,7 +220,7 @@ public class AutoAzul extends LinearOpMode{
                 sleep(500);
                 girarseletor(-50);
                 sleep(500);
-                girarseletor(-50);
+                girarseletor(-48);
                 sleep(200);
                 intake.stop();
                 atirar();
@@ -281,12 +281,12 @@ public class AutoAzul extends LinearOpMode{
     public void atirar(){
         Thread acel = new Thread(() -> {
             while (opModeIsActive()) {
-                shooter.acelerarAtirador(1950);
+                shooter.acelerarAtirador(2000);
             }
         });
         acel.start();
 
-        while (shooter.getVel() < 1950) { }
+        while (shooter.getVel() < 2000) { }
         cremalheira.setPosition(1);
 
         while (atirador2.getVelocity() > 1600) { }

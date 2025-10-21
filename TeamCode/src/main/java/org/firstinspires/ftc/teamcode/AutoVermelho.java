@@ -90,8 +90,8 @@ public class AutoVermelho extends LinearOpMode{
     int ordem;
     public void runOpMode() {
         direitaFrente = hardwareMap.get(DcMotorEx.class, "rightFront");
-        direitaTras = hardwareMap.get(DcMotorEx.class, "rightBack");
-        esquerdaFrente = hardwareMap.get(DcMotorEx.class, "encoderseletor");
+        direitaTras = hardwareMap.get(DcMotorEx.class, "encoderseletor");
+        esquerdaFrente = hardwareMap.get(DcMotorEx.class, "leftFront");
         esquerdaTras = hardwareMap.get(DcMotorEx.class, "leftBack");
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -99,9 +99,7 @@ public class AutoVermelho extends LinearOpMode{
         esteira = hardwareMap.get(DcMotorEx.class, "perp");
         encoderseletor = hardwareMap.get(DcMotorEx.class, "encoderseletor");
 
-        direitaFrente.setDirection(DcMotorSimple.Direction.REVERSE);
-        direitaTras.setDirection(DcMotorSimple.Direction.REVERSE);
-        esquerdaFrente.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         cremalheira = hardwareMap.get(Servo.class, "cremalheira");
         servoseletor = hardwareMap.get(Servo.class, "seletor");
@@ -115,17 +113,17 @@ public class AutoVermelho extends LinearOpMode{
         RobotSetup peach = new RobotSetup(hardwareMap, esquerdaFrente, esquerdaTras, direitaFrente, direitaTras, sugador, esteira);
         shooter = new Shooter(atirador1, atirador2);
         intake = new Intake(sugador, esteira);
-        Pose2d initialPose = new Pose2d(54.7, -51.1, Math.toRadians(225));
+        Pose2d initialPose = new Pose2d(-54.7, -51.1, Math.toRadians(135));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeToSplineHeading(new Vector2d(12, -5), Math.toRadians(205))
+                .strafeToSplineHeading(new Vector2d(-12, -5), Math.toRadians(155))
                 .waitSeconds(0.5);
 
-        TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(new Vector2d(12, -5), Math.toRadians(205)))
+        TrajectoryActionBuilder tab2 = drive.actionBuilder(new Pose2d(new Vector2d(-12, -5), Math.toRadians(155)))
                 .turn(Math.toRadians(-53))
                 .waitSeconds(0.5);
-        TrajectoryActionBuilder tab3 = drive.actionBuilder(new Pose2d(new Vector2d(12, -5), Math.toDegrees(155)))
+        TrajectoryActionBuilder tab3 = drive.actionBuilder(new Pose2d(new Vector2d(-12, -5), Math.toDegrees(155)))
                 .strafeToSplineHeading(new Vector2d(-68, 68), Math.toRadians(205));
 
         while (!isStopRequested() && !opModeIsActive()) {

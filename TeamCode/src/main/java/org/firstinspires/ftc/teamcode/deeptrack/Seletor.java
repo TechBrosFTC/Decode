@@ -9,13 +9,8 @@ public class Seletor {
     private DcMotorEx encoder;
     private Servo servo; // Servo contínuo
     public int posicaoAtual = 0;
-<<<<<<< HEAD
     public int numeroDeGiros = 0;
     double RAMP_LENGHT = 1365;
-=======
-    int numeroDeGiros = 0;
-    double RAMP_LENGHT = 1000;
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     double a = 0, b = 0, power = 0;
     double valoresEsperado = 0, alvoAbsoluto = 0;
     public int actual_intake_slot = 0;
@@ -30,17 +25,13 @@ public class Seletor {
         this.encoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         this.encoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         posicaoAtual = 0;
-<<<<<<< HEAD
         numeroDeGiros = 0;
-=======
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
         this.servo.setDirection(Servo.Direction.REVERSE);
     }
 
     /** Função para girar o seletor com desaceleração linear + compensação de erro acumulado */
     /** Função para girar o seletor com desaceleração linear + correção de erro acumulado */
     /** Função para girar o seletor com desaceleração linear + correção de erro acumulado + microcorreção */
-<<<<<<< HEAD
     public void girarseletor(double angulo) {
         encoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -78,82 +69,12 @@ public class Seletor {
 
         // Para o servo
         servo.setPosition(0.5);
-=======
-    public void girarseletor(int anguloAbsoluto) {
-        // 1. Converte o ângulo desejado em ticks de encoder (22.75 ticks por grau)
-        double alvoTicks = anguloAbsoluto * 22.75;
-
-        // 2. Aplica compensação do erro acumulado no alvo (em ticks)
-        alvoTicks -= erroAcumulado;
-
-        // 3. Guarda posição inicial
-        double posicaoInicialEncoder = encoder.getCurrentPosition();
-        double alvoFinal = posicaoInicialEncoder + alvoTicks;
-
-        double rampa = RAMP_LENGHT / Math.abs(alvoTicks);
-
-        // 4. Movimento principal
-        if (alvoTicks > 0) { // sentido horário
-            a = 0.07 / (alvoTicks * rampa);
-            while (encoder.getCurrentPosition() < posicaoInicialEncoder + (alvoTicks * (1 - rampa))) {
-                servo.setPosition(1); // velocidade máxima
-            }
-            while (encoder.getCurrentPosition() < alvoFinal) {
-                power = a * (encoder.getCurrentPosition() - posicaoInicialEncoder - (alvoTicks * (1 - rampa))) + 0.53;
-                if (power < 0.53) power = 0.53;
-                servo.setPosition(power);
-            }
-        } else { // sentido anti-horário
-            a = -0.07 / (Math.abs(alvoTicks * rampa));
-            while (encoder.getCurrentPosition() > posicaoInicialEncoder - (Math.abs(alvoTicks) * (1 - rampa))) {
-                servo.setPosition(0); // velocidade máxima anti-horário
-            }
-            while (encoder.getCurrentPosition() > alvoFinal) {
-                power = a * (posicaoInicialEncoder - encoder.getCurrentPosition() - (Math.abs(alvoTicks) * (1 - rampa))) + 0.47;
-                if (power > 0.47) power = 0.47;
-                servo.setPosition(power);
-            }
-        }
-
-        // 5. Para o servo
-        servo.setPosition(0.5);
-
-        // 6. Microcorreção automática
-        final double TOLERANCIA_GRAUS = 1.0;  // tolerância aceitável
-        final int MAX_ATTEMPTS = 5;           // tentativas máximas de correção
-        double erroTicks = encoder.getCurrentPosition() - alvoFinal;
-        int tentativas = 0;
-
-        while (Math.abs(erroTicks) > TOLERANCIA_GRAUS * 22.75 && tentativas < MAX_ATTEMPTS) {
-            tentativas++;
-            double dir = Math.signum(-erroTicks);  // direção para corrigir
-            double microPower = 0.25 * dir;        // potência pequena para precisão
-            servo.setPosition(0.5 + microPower);  // 0.5 = parada
-
-            try { Thread.sleep(80); } catch (InterruptedException e) { }
-
-            servo.setPosition(0.5); // corta
-            try { Thread.sleep(40); } catch (InterruptedException e) { }
-
-            erroTicks = encoder.getCurrentPosition() - alvoFinal;
-        }
-
-        // 7. Atualiza erro acumulado
-        erroAcumulado = encoder.getCurrentPosition() - alvoFinal;
-        if (Math.abs(erroAcumulado / 22.75) < TOLERANCIA_GRAUS) erroAcumulado = 0;
-
-        // Debug opcional
-        // System.out.printf("Microcorreção: Erro final = %.2f ticks (%.2f°)\n", erroAcumulado, erroAcumulado/22.75);
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     }
 
 
 
-<<<<<<< HEAD
 
 
-=======
->>>>>>> 2706664efe7dfccbbf0598d6237aac9a0998ef3f
     /** Move um slot vazio para a posição de coleta*/
     public int getSlotNaPosicaoColeta() {
         int slotNaColeta = (posicaoAtual + 3) % 3;
